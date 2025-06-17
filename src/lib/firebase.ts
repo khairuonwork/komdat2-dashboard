@@ -39,3 +39,42 @@ export const postFirebaseData = async (path: string, data: any) => {
     return null;
   }
 };
+
+/**
+ * Kompatibel dengan Firebase Realtime: polling + callback
+ * @param path Path ke data (contoh: "sensorReadings")
+ * @param callback Fungsi yang dijalankan setiap kali data berubah
+ * @param intervalMs Interval polling dalam milidetik (default: 2000 ms)
+ * @returns fungsi unsubscribe
+ */
+export const onValueCompatible = (
+  path: string,
+  callback: (snapshot: { val: () => any }) => void,
+  intervalMs = 2000
+) => {
+  let prevData: string | null = null;
+  let isCancelled = false;
+
+  const poll = async () => {
+    if (isCancelled) return;
+
+    const data = await fetchFirebaseData(`/${path}`);
+    const dataString = JSON.stringify(data);
+
+    if (dataString !== prevData) {
+      prevData = dataString;
+      callback({
+        val: () => data,
+      });
+    }
+
+    setTimeout(poll, intervalMs);
+  };
+
+  poll();
+
+  // Fungsi untuk unsubscribe
+  return () => {
+    isCancelled = true;
+  };
+};

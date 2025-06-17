@@ -11,8 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ref, onValue } from "firebase/database";
-import { database } from "@/lib/firebase";
+import { onValueCompatible } from "@/lib/firebase";
 import type { SensorData } from "@/types/sensor";
 
 export default function SensorDashboard() {
@@ -20,9 +19,7 @@ export default function SensorDashboard() {
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
   useEffect(() => {
-    const sensorRef = ref(database, "sensorReadings");
-
-    const unsubscribe = onValue(sensorRef, (snapshot) => {
+  const unsubscribe = onValueCompatible("sensorReadings", (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
 
