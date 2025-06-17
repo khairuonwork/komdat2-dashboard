@@ -14,11 +14,12 @@ export const getLatestSensorData = async (): Promise<FirebaseSensorData | null> 
     const rawData = await res.json();
     if (!rawData) return null;
 
-    // Ambil array dari objek push key
-    const entries: FirebaseSensorData[] = Object.values(rawData);
-    const latest = entries[entries.length - 1];
+    // Ambil data terakhir berdasarkan push key
+    const keys = Object.keys(rawData);
+    const latestKey = keys[keys.length - 1];
+    const latestData: FirebaseSensorData = rawData[latestKey];
 
-    return latest;
+    return latestData;
   } catch (err) {
     console.error("Firebase fetch error:", err);
     return null;

@@ -22,11 +22,12 @@ export interface SensorData {
   lastUpdated: Date;
 }
 
+// Sesuai struktur dari Firebase-mu sekarang
 export interface FirebaseSensorData {
-  cahaya?: number;
-  pir?: number;
-  ultrasonic?: number;
-  dht11?: {
+  cahaya: number;
+  pir: number;
+  ultrasonic: number;
+  dht11: {
     temperature: number;
     humidity: number;
   };
