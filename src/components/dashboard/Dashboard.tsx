@@ -1,3 +1,5 @@
+// app/components/SensorDashboard.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -11,34 +13,18 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { onValueCompatible } from "@/lib/firebase";
-import type { SensorData } from "@/types/sensor";
+import { getLatestSensorData } from "@/lib/firebase";
+import type { FirebaseSensorData, SensorData } from "@/types/sensor";
 
 export default function SensorDashboard() {
   const [sensors, setSensors] = useState<SensorData[]>([]);
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
   useEffect(() => {
-  const unsubscribe = onValueCompatible("sensorReadings", (snapshot) => {
-      const data = snapshot.val();
+    const fetchData = async () => {
+      const data: FirebaseSensorData | null = await getLatestSensorData();
       if (!data) return;
 
-      // Konversi object numerik ke array agar bisa diakses dengan index
-      const dhtArr = Object.values(data.dht11 ?? {}) as {
-        temperature: number;
-        humidity: number;
-      }[];
-      const cahayaArr = Object.values(data.cahaya ?? {}) as number[];
-      const ultrasonicArr = Object.values(data.ultrasonic ?? {}) as number[];
-      const pirArr = Object.values(data.pir ?? {}) as number[];
-
-      // Ambil index terakhir dari masing-masing sensor
-      const idxDht = dhtArr.length - 1;
-      const idxLight = cahayaArr.length - 1;
-      const idxUltra = ultrasonicArr.length - 1;
-      const idxPir = pirArr.length - 1;
-
-      // Fungsi status berdasarkan batas nilai
       const getStatus = (
         value: number,
         min: number,
@@ -63,9 +49,9 @@ export default function SensorDashboard() {
           id: "temp-sensor",
           name: "Temperature Sensor",
           type: "Temperature",
-          value: dhtArr[idxDht]?.temperature ?? 0,
+          value: data.dht11?.temperature ?? 0,
           unit: "°C",
-          status: getStatus(dhtArr[idxDht]?.temperature ?? 0, 0, 50),
+          status: getStatus(data.dht11?.temperature ?? 0, 0, 50),
           icon: Thermometer,
           min: 0,
           max: 50,
@@ -75,9 +61,9 @@ export default function SensorDashboard() {
           id: "hum-sensor",
           name: "Humidity Sensor",
           type: "Humidity",
-          value: dhtArr[idxDht]?.humidity ?? 0,
+          value: data.dht11?.humidity ?? 0,
           unit: "%",
-          status: getStatus(dhtArr[idxDht]?.humidity ?? 0, 0, 100),
+          status: getStatus(data.dht11?.humidity ?? 0, 0, 100),
           icon: Droplets,
           min: 0,
           max: 100,
@@ -87,9 +73,9 @@ export default function SensorDashboard() {
           id: "light-sensor",
           name: "Light Sensor",
           type: "Light Intensity",
-          value: cahayaArr[idxLight] ?? 0,
+          value: data.cahaya ?? 0,
           unit: "lux",
-          status: getStatus(cahayaArr[idxLight] ?? 0, 0, 1000),
+          status: getStatus(data.cahaya ?? 0, 0, 1000),
           icon: Sun,
           min: 0,
           max: 1000,
@@ -99,9 +85,9 @@ export default function SensorDashboard() {
           id: "distance-sensor",
           name: "Distance Sensor",
           type: "Ultrasonic",
-          value: ultrasonicArr[idxUltra] ?? 0,
+          value: data.ultrasonic ?? 0,
           unit: "cm",
-          status: getStatus(ultrasonicArr[idxUltra] ?? 0, 0, 300),
+          status: getStatus(data.ultrasonic ?? 0, 0, 300),
           icon: Zap,
           min: 0,
           max: 300,
@@ -111,9 +97,9 @@ export default function SensorDashboard() {
           id: "pir-sensor",
           name: "Motion Sensor",
           type: "Motion",
-          value: pirArr[idxPir] ?? 0,
+          value: data.pir ?? 0,
           unit: "",
-          status: pirArr[idxPir] === 1 ? "warning" : "normal",
+          status: data.pir === 1 ? "warning" : "normal",
           icon: Move,
           min: 0,
           max: 1,
@@ -122,9 +108,11 @@ export default function SensorDashboard() {
       ];
 
       setSensors(sensorsRealtime);
-    });
+    };
 
-    return () => unsubscribe();
+    fetchData();
+    const interval = setInterval(fetchData, 5000); // optional: polling 5 detik
+    return () => clearInterval(interval);
   }, []);
 
   const getStatusColor = (status: SensorData["status"]) => {
@@ -192,9 +180,7 @@ export default function SensorDashboard() {
             return (
               <Card key={sensor.id} className="relative overflow-hidden">
                 <div
-                  className={`absolute top-0 left-0 w-1 h-full ${getStatusColor(
-                    sensor.status
-                  )}`}
+                  className={`absolute top-0 left-0 w-1 h-full ${getStatusColor(sensor.status)}`}
                 />
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
@@ -218,10 +204,7 @@ export default function SensorDashboard() {
                   </div>
                   {sensor.id !== "pir-sensor" && (
                     <>
-                      <Progress
-                        value={getProgressValue(sensor)}
-                        className="h-2"
-                      />
+                      <Progress value={getProgressValue(sensor)} className="h-2" />
                       <div className="flex justify-between text-xs text-gray-500 mt-1">
                         <span>{sensor.min + sensor.unit}</span>
                         <span>{sensor.max + sensor.unit}</span>

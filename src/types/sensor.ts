@@ -1,7 +1,4 @@
-// Node 1 (Light Sensor)
-// Node 2 (Light Sensor, Temperature Sensor, Humidity Sensor)
-// Node 3 (Light Sensor, Temperature Sensor, Humidity Sensor, Distance Sensor)
-// Node 4 (Light Sensor, Temperature Sensor, Humidity Sensor, Distance Sensor, MASTER)
+// types/sensor.ts
 
 export type SensorStatus = "normal" | "warning" | "critical";
 
@@ -25,15 +22,12 @@ export interface SensorData {
   lastUpdated: Date;
 }
 
-export interface FirebaseData {
-  sensorReadings: {
-    cahaya: number[];
-    dht11: {
-      humidity: number;
-      temperature: number;
-    }[];
-    pir: number[];
-    soil: number[];
-    ultrasonic: number[];
+export interface FirebaseSensorData {
+  cahaya?: number;
+  pir?: number;
+  ultrasonic?: number;
+  dht11?: {
+    temperature: number;
+    humidity: number;
   };
 }
